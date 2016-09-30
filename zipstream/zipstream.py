@@ -85,18 +85,23 @@ class ZipStream(object):
         """
         raise NotImplementedError("Zip64 is not supported yet")
 
-    def add_file(self, fname, newname=None):
+    def add_file(self, filename, size, last_modified):
+        """
+        Parameters:
+          filename: string
+          size: int
+          last_modified: datetime
+        """
         # date and time of file
-        dt = time.localtime()
+        dt = last_modified.timetuple()
         dosdate = (dt.tm_year-1980) << 9 | dt.tm_mon << 5 | dt.tm_mday
         dostime = dt.tm_hour << 11 | dt.tm_min << 5 | (dt.tm_min // 2)
         # check zip32 limit
-        stats = os.stat(fname)
-        if stats.st_size>ZIP32_LIMIT:
+        if size>ZIP32_LIMIT:
             self.zip64_required()
         # file properties
-        rec = { 'src' : fname,
-                'size': stats.st_size,
+        rec = { 'src' : filename,
+                'size': size,
                 'mod_time': dosdate,
                 'mod_date': dostime,
                 'crc' : 0, # will be calculated during data streaming
@@ -104,10 +109,7 @@ class ZipStream(object):
                 'flags' : 0b00001000, # flag about using data descriptor is always on
               }
         # file name in archive
-        if newname:
-            fname = newname
-        else:
-            fname = os.path.split(fname)[1]
+        fname = os.path.split(filename)[1]
         try:
             rec['fname'] = fname.encode("ascii")
         except UnicodeError:
