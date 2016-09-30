@@ -1,4 +1,6 @@
-# zipstream
+# minio-zipstream 
+
+This is a fork from [kbbdy/zipstream](https://github.com/kbbdy/zipstream) for implementing multiple object download from S3 backend.
 
 Simple python library for streaming ZIP files which are created dynamically, without using any temporary files.
 
@@ -33,15 +35,17 @@ with file("zipout.zip","wb") as fout:
 
 ```python
 from django.http import StreamingHttpResponse
+from os.path import basename as get_object_base_name
 
-def stream_as_zip(request):
+def stream_as_zip(request, object_names):
     streamed_data_filename = "my_streamed_zip_file.zip"
     # large chunk size will improve speed, but increase memory usage
     stream = ZipStream(chunksize=32768)
-    # filename of first file in ZIP archive will be different than original
-    stream.add_file("/tmp/my_mp3_file.mp3", "my.mp3")
-    stream.add_file("/tmp/some_grapth.jpg")
-    stream.add_file("/tmp/foo")
+    
+    for object_name in object_names:
+        # filename of first file in ZIP archive will be different than original
+        stream.add_file(get_object_base_name(object_name))
+
     # streamed response
     response = StreamingHttpResponse(
         stream.stream(),
