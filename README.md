@@ -20,13 +20,23 @@ Files stored in ZIP file are not compressed. Its intended to serve easily struct
 
 ```python
 from zipstream import ZipStream
+from minio import Minio
+from minio.error import ResponseError
+
+s3Client = Minio('s3.amazonaws.com',
+                 access_key='ACCESS_KEY',
+                 secret_key='SECRET_KEY')
+
 zs = ZipStream()
-# add files to zip before streaming
-zs.add_file("example_file_1.txt")
-zs.add_file("example_file_2.txt")
-zs.add_file("example_file_3.jpg")
+
+# List all object paths in bucket that begin with my-prefixname.
+objects = s3client.list_objects('mybucket', prefix='my-prefixname',
+                                   recursive=True)
+for obj in objects:
+    zs.add_file(obj.object_name, obj.size, obj.last_modified)
+
 # write result file
-with file("zipout.zip","wb") as fout:
+with file("attachment.zip","wb") as fout:
     for f in zs.stream():
         fout.write(f)
 ```
